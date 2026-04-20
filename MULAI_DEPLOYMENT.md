@@ -33,6 +33,8 @@ Website Anda sudah siap untuk di-upload ke hosting gratis (Vercel).
 
 ### Step 1: Setup Database (3 menit)
 
+**Jika error SQL: Baca [SOLUSI_SQL_SUPABASE.md](./SOLUSI_SQL_SUPABASE.md)**
+
 1. Buka https://supabase.com → Sign up → New Project
 2. Name: `sim-tunjangan-guru`
 3. Buka SQL Editor → Copy isi file `supabase-schema.sql` → Paste → Run
