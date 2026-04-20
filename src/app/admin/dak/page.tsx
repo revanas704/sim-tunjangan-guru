@@ -826,11 +826,11 @@ export default function AdminDAKPage() {
 
                               {/* Pagination */}
                               {detailItemsPerPage !== 'ALL' && totalPages > 1 && (
-                                <div className="flex items-center justify-between mt-4">
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6 p-4 bg-gray-50 dark:bg-gray-900/30 rounded-md border">
                                   <p className="text-sm text-muted-foreground">
                                     Menampilkan {startIndex + 1} - {Math.min(endIndex, filteredRecipients.length)} dari {filteredRecipients.length} data
                                   </p>
-                                  <div className="flex gap-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <Button
                                       variant="outline"
                                       size="sm"
@@ -839,22 +839,10 @@ export default function AdminDAKPage() {
                                     >
                                       Sebelumnya
                                     </Button>
-                                    <div className="flex items-center gap-1">
-                                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                        <Button
-                                          key={page}
-                                          variant={page === detailCurrentPage ? 'default' : 'outline'}
-                                          size="sm"
-                                          onClick={() => setDetailCurrentPage(page)}
-                                          className={`w-8 h-8 ${
-                                            page === detailCurrentPage
-                                              ? 'bg-red-600 hover:bg-red-700'
-                                              : ''
-                                          }`}
-                                        >
-                                          {page}
-                                        </Button>
-                                      ))}
+                                    <div className="flex items-center gap-1 px-3 py-1 bg-white dark:bg-gray-800 rounded-md border">
+                                      <span className="text-sm font-medium">
+                                        Halaman {detailCurrentPage} dari {totalPages}
+                                      </span>
                                     </div>
                                     <Button
                                       variant="outline"
