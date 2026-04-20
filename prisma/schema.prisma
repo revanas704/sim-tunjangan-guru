@@ -6,103 +6,103 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  password  String
-  role      String   // "ADMIN" or "GURU"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  guru      Guru?    @relation(fields: [guruId], references: [id])
-  guruId    String?  @unique
+  id        String   @id @default(uuid()) @db.Uuid
+  username  String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  role      String   @db.VarChar(50) // "ADMIN" or "GURU"
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+  guru      Guru?    @relation(fields: [guruId], references: [id], onDelete: SetNull)
+  guruId    String?  @unique @db.Uuid
 }
 
 model Guru {
-  id                   String     @id @default(cuid())
-  nik                  String
-  nuptk                String
-  nip                  String     @unique
-  nama                 String
-  pangkat              String
-  golongan             String     // Golongan pegawai (I/a, II/b, III/c, IV/d, etc.)
-  masaKerja            Int        // in years
-  namaPemilikRekening  String
-  nomorRekening        String
-  bank                 String
-  satuanPendidikan     String
-  gajiPokok            Float      // Auto-calculated based on PP No. 5 Tahun 2024
-  salurBruto           Float      // Always equals gajiPokok (Salur Bruto = Gaji Pokok)
-  pph                  Float      // Auto-calculated (0%, 5%, or 15% based on golongan)
-  potonganJkn          Float      // Auto-calculated (1% of gajiPokok)
-  salurNetto           Float      // Auto-calculated: gajiPokok - pph - potonganJkn
-  statusSktp           String     // "TERBIT" or "BELUM"
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @updatedAt
+  id                   String     @id @default(uuid()) @db.Uuid
+  nik                  String?    @db.VarChar(50)
+  nuptk                String?    @db.VarChar(50)
+  nip                  String     @unique @db.VarChar(50)
+  nama                 String     @db.VarChar(255)
+  pangkat              String?    @db.VarChar(100)
+  golongan             String?    @db.VarChar(50) // Golongan pegawai (I/a, II/b, III/c, IV/d, etc.)
+  masaKerja            Int?
+  namaPemilikRekening  String?    @db.VarChar(255)
+  nomorRekening        String?    @db.VarChar(50)
+  bank                 String?    @db.VarChar(100)
+  satuanPendidikan     String?    @db.VarChar(255)
+  gajiPokok            Decimal    @db.Decimal
+  salurBruto           Decimal    @db.Decimal // Always equals gajiPokok (Salur Bruto = Gaji Pokok)
+  pph                  Decimal    @db.Decimal // Auto-calculated (0%, 5%, or 15% based on golongan)
+  potonganJkn          Decimal    @db.Decimal // Auto-calculated (1% of gajiPokok)
+  salurNetto           Decimal    @db.Decimal // Auto-calculated: gajiPokok - pph - potonganJkn
+  statusSktp           String?    @db.VarChar(50) // "TERBIT" or "BELUM"
+  createdAt            DateTime   @default(now()) @db.Timestamptz
+  updatedAt            DateTime   @updatedAt @db.Timestamptz
   user                 User?
   pengajuanList        Pengajuan[]
 }
 
 model Pengajuan {
-  id                  String     @id @default(cuid())
-  guruId              String
-  guru                Guru       @relation(fields: [guruId], references: [id])
-  jenisPengajuan      String     // "PANGKAT", "MASA_KERJA", "REKENING"
-  dataLama            String?    // JSON string of old data
-  dataBaru            String     // JSON string of new data
-  dokumenPendukung    String?    // Document path or base64
-  status              String     // "PENDING", "DISETUJUI", "DITOLAK"
-  catatan             String?    // Admin notes
-  tanggalDiajukan     DateTime   @default(now())
-  tanggalVerifikasi   DateTime?
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+  id                  String     @id @default(uuid()) @db.Uuid
+  guruId              String     @db.Uuid
+  guru                Guru       @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  jenisPengajuan      String     @db.VarChar(50) // "PANGKAT", "MASA_KERJA", "REKENING"
+  dataLama            String?    @db.Text // JSON string of old data
+  dataBaru            String     @db.Text // JSON string of new data
+  dokumenPendukung    String?    @db.Text // Document path or base64
+  status              String     @db.VarChar(50) // "PENDING", "DISETUJUI", "DITOLAK"
+  catatan             String?    @db.Text // Admin notes
+  tanggalDiajukan     DateTime   @default(now()) @db.Timestamptz
+  tanggalVerifikasi   DateTime?  @db.Timestamptz
+  createdAt           DateTime   @default(now()) @db.Timestamptz
+  updatedAt           DateTime   @updatedAt @db.Timestamptz
 }
 
 model DAKPenyaluran {
-  id                String   @id @default(cuid())
-  jenis             String   // Jenis tunjangan (TPG/TAMSIL)
-  kanwil            String
-  kppn              String
-  pemda             String
-  periode           String   // Bulan (JANUARI, FEBRUARI, dll)
+  id                String            @id @default(uuid()) @db.Uuid
+  jenis             String            @db.VarChar(255) // Jenis tunjangan (TPG/TAMSIL)
+  kanwil            String?           @db.VarChar(255)
+  kppn              String?           @db.VarChar(255)
+  pemda             String?           @db.VarChar(255)
+  periode           String            @db.VarChar(50) // Bulan (JANUARI, FEBRUARI, dll)
   gelombang         Int
-  salurBruto        Float
-  potPph            Float
-  potJknPns         Float
-  potJknPppk        Float
-  nilaiRekomendasi  Float
+  salurBruto        Decimal           @db.Decimal
+  potPph            Decimal           @db.Decimal
+  potJknPns         Decimal           @db.Decimal
+  potJknPppk        Decimal           @db.Decimal
+  nilaiRekomendasi  Decimal           @db.Decimal
   jumlahPenerima    Int
-  kirimKeDitPa      String?
-  kirimKeKppn       String?
+  kirimKeDitPa      String?           @db.VarChar(50)
+  kirimKeKppn       String?           @db.VarChar(50)
   durasiKerja       Int
-  bankOperator      String
-  spp               String
-  sp2d              String
-  status            String   // "Upload Dokumen", "Proses Pencairan", "Sudah SP2D"
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  bankOperator      String?           @db.VarChar(255)
+  spp               String?           @db.VarChar(255)
+  sp2d              String?           @db.VarChar(255)
+  status            String            @db.VarChar(100) // "Upload Dokumen", "Proses Pencairan", "Sudah SP2D"
+  createdAt         DateTime          @default(now()) @db.Timestamptz
+  updatedAt         DateTime          @updatedAt @db.Timestamptz
   detailPenerima    DAKDetailPenerima[]
 }
 
 model DAKDetailPenerima {
-  id                  String   @id @default(cuid())
-  dakPenyaluranId     String
+  id                  String        @id @default(uuid()) @db.Uuid
+  dakPenyaluranId     String        @db.Uuid
   dakPenyaluran       DAKPenyaluran @relation(fields: [dakPenyaluranId], references: [id], onDelete: Cascade)
-  nip                 String
-  nama                String
-  namaPemilikRekening String
-  noRekening          String
-  bank                String
-  satdik              String
-  salurBruto          Float
-  pph                 Float
-  potIjn              Float
-  salurNetto          Float
-  status              String
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  nip                 String        @db.VarChar(50)
+  nama                String        @db.VarChar(255)
+  namaPemilikRekening String?       @db.VarChar(255)
+  noRekening          String        @db.VarChar(50)
+  bank                String?       @db.VarChar(100)
+  satdik              String?       @db.VarChar(255)
+  salurBruto          Decimal       @db.Decimal
+  pph                 Decimal       @db.Decimal
+  potIjn              Decimal       @db.Decimal
+  salurNetto          Decimal       @db.Decimal
+  status              String        @db.VarChar(50)
+  createdAt           DateTime      @default(now()) @db.Timestamptz
+  updatedAt           DateTime      @updatedAt @db.Timestamptz
 }
