@@ -2,31 +2,10 @@
 -- SIM Tunjangan Profesi Guru - Supabase Schema
 -- ==========================================
 
--- Hapus tabel jika ada (untuk fresh install)
-DROP TABLE IF EXISTS "DAKDetailPenerima";
-DROP TABLE IF EXISTS "DAKPenyaluran";
-DROP TABLE IF EXISTS "Pengajuan";
-DROP TABLE IF EXISTS "Guru";
-DROP TABLE IF EXISTS "User";
-
 -- ==========================================
--- Tabel User (Authentication)
+-- Tabel Guru (Create dulu karena User punya foreign key ke Guru)
 -- ==========================================
-CREATE TABLE "User" (
-    id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('ADMIN', 'GURU')),
-    guruId TEXT,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (guruId) REFERENCES "Guru"(id) ON DELETE SET NULL
-);
-
--- ==========================================
--- Tabel Guru
--- ==========================================
-CREATE TABLE "Guru" (
+CREATE TABLE IF NOT EXISTS "Guru" (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
     nip TEXT UNIQUE NOT NULL,
     nama TEXT NOT NULL,
@@ -57,9 +36,23 @@ CREATE TABLE "Guru" (
 );
 
 -- ==========================================
+-- Tabel User (Authentication)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS "User" (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('ADMIN', 'GURU')),
+    guruId TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guruId) REFERENCES "Guru"(id) ON DELETE SET NULL
+);
+
+-- ==========================================
 -- Tabel Pengajuan
 -- ==========================================
-CREATE TABLE "Pengajuan" (
+CREATE TABLE IF NOT EXISTS "Pengajuan" (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
     guruId TEXT NOT NULL,
     nip TEXT NOT NULL,
@@ -76,7 +69,7 @@ CREATE TABLE "Pengajuan" (
 -- ==========================================
 -- Tabel DAK Penyaluran
 -- ==========================================
-CREATE TABLE "DAKPenyaluran" (
+CREATE TABLE IF NOT EXISTS "DAKPenyaluran" (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
     jenis TEXT NOT NULL,
     kanwil TEXT,
@@ -104,7 +97,7 @@ CREATE TABLE "DAKPenyaluran" (
 -- ==========================================
 -- Tabel DAK Detail Penerima
 -- ==========================================
-CREATE TABLE "DAKDetailPenerima" (
+CREATE TABLE IF NOT EXISTS "DAKDetailPenerima" (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
     dakPenyaluranId TEXT NOT NULL,
     nip TEXT NOT NULL,
@@ -126,17 +119,17 @@ CREATE TABLE "DAKDetailPenerima" (
 -- ==========================================
 -- Index untuk optimasi query
 -- ==========================================
-CREATE INDEX "idx_user_username" ON "User"(username);
-CREATE INDEX "idx_user_role" ON "User"(role);
-CREATE INDEX "idx_guru_nip" ON "Guru"(nip);
-CREATE INDEX "idx_pengajuan_guruId" ON "Pengajuan"(guruId);
-CREATE INDEX "idx_pengajuan_status" ON "Pengajuan"(status);
-CREATE INDEX "idx_pengajuan_tahun_semester" ON "Pengajuan"(tahun, semester);
-CREATE INDEX "idx_dak_penyaluran_periode" ON "DAKPenyaluran"(periode);
-CREATE INDEX "idx_dak_penyaluran_status" ON "DAKPenyaluran"(status);
-CREATE INDEX "idx_dak_detail_penyaluranId" ON "DAKDetailPenerima"(dakPenyaluranId);
-CREATE INDEX "idx_dak_detail_nip" ON "DAKDetailPenerima"(nip);
-CREATE INDEX "idx_dak_detail_nama" ON "DAKDetailPenerima"(nama);
+CREATE INDEX IF NOT EXISTS "idx_user_username" ON "User"(username);
+CREATE INDEX IF NOT EXISTS "idx_user_role" ON "User"(role);
+CREATE INDEX IF NOT EXISTS "idx_guru_nip" ON "Guru"(nip);
+CREATE INDEX IF NOT EXISTS "idx_pengajuan_guruId" ON "Pengajuan"(guruId);
+CREATE INDEX IF NOT EXISTS "idx_pengajuan_status" ON "Pengajuan"(status);
+CREATE INDEX IF NOT EXISTS "idx_pengajuan_tahun_semester" ON "Pengajuan"(tahun, semester);
+CREATE INDEX IF NOT EXISTS "idx_dak_penyaluran_periode" ON "DAKPenyaluran"(periode);
+CREATE INDEX IF NOT EXISTS "idx_dak_penyaluran_status" ON "DAKPenyaluran"(status);
+CREATE INDEX IF NOT EXISTS "idx_dak_detail_penyaluranId" ON "DAKDetailPenerima"(dakPenyaluranId);
+CREATE INDEX IF NOT EXISTS "idx_dak_detail_nip" ON "DAKDetailPenerima"(nip);
+CREATE INDEX IF NOT EXISTS "idx_dak_detail_nama" ON "DAKDetailPenerima"(nama);
 
 -- ==========================================
 -- Insert Default Users
@@ -148,7 +141,8 @@ VALUES (
     'admin',
     '$2a$10$rO9k6LdJXqVQVqVWJvTLeTfJ6HjZV4WqKZfK7Y7Y6Hq3M8X5C0u',
     'ADMIN'
-);
+)
+ON CONFLICT (username) DO NOTHING;
 
 -- Insert Guru (Password: guru123)
 INSERT INTO "User" (username, password, role)
@@ -156,7 +150,8 @@ VALUES (
     'guru',
     '$2a$10$rO9k6LdJXqVQVqVWJvTLeTfJ6HjZV4WqKZfK7Y7Y6Hq3M8X5C0u',
     'GURU'
-);
+)
+ON CONFLICT (username) DO NOTHING;
 
 -- ==========================================
 -- Insert Sample Data (Opsional - untuk testing)
@@ -165,16 +160,28 @@ VALUES (
 -- Sample Guru
 INSERT INTO "Guru" (nip, nama, nik, tempatLahir, tanggalLahir, jenisKelamin, alamat, noHp, email, statusPegawai, bank, nomorRekening, unitKerja) VALUES
 ('198001012005011001', 'Ahmad Supriyadi', '3201120101800001', 'Jakarta', '1980-01-01', 'Laki-laki', 'Jl. Pendidikan No. 1', '081234567890', 'ahmad@email.com', 'PNS', 'BRI', '1234567890', 'SDN 1 Jakarta'),
-('198502152010011002', 'Siti Aminah', '3204150202850002', 'Bandung', '1985-02-15', 'Perempuan', 'Jl. Guru No. 2', '081234567891', 'siti@email.com', 'PPPK', 'BNI', '0987654321', 'SDN 2 Bandung');
+('198502152010011002', 'Siti Aminah', '3204150202850002', 'Bandung', '1985-02-15', 'Perempuan', 'Jl. Guru No. 2', '081234567891', 'siti@email.com', 'PPPK', 'BNI', '0987654321', 'SDN 2 Bandung')
+ON CONFLICT (nip) DO NOTHING;
 
 -- Sample DAK Penyaluran
 INSERT INTO "DAKPenyaluran" (jenis, kanwil, kppn, pemda, periode, gelombang, salurBruto, potPph, potJknPns, potJknPppk, nilaiRekomendasi, jumlahPenerima, status) VALUES
-('TPP Triwulan I', 'Kanwil DJPB Jawa Barat', 'KPPN Bandung', 'Pemda Kota Bandung', '2025', '1', 5000000000, 50000000, 10000000, 20000000, 4920000000, 2, 'UPLOAD_SELESAI');
+('TPP Triwulan I', 'Kanwil DJPB Jawa Barat', 'KPPN Bandung', 'Pemda Kota Bandung', '2025', '1', 5000000000, 50000000, 10000000, 20000000, 4920000000, 2, 'UPLOAD_SELESAI')
+ON CONFLICT DO NOTHING;
 
 -- Sample DAK Detail Penerima
-INSERT INTO "DAKDetailPenerima" (dakPenyaluranId, nip, nama, namaPemilikRekening, noRekening, bank, satdik, salurBruto, pph, potIjn, salurNetto, status) VALUES
-((SELECT id FROM "DAKPenyaluran" LIMIT 1), '198001012005011001', 'Ahmad Supriyadi', 'Ahmad Supriyadi', '1234567890', 'BRI', 'SDN 1 Jakarta', 2500000000, 25000000, 5000000, 2425000000, 'BELUM_CAIR'),
-((SELECT id FROM "DAKPenyaluran" LIMIT 1), '198502152010011002', 'Siti Aminah', 'Siti Aminah', '0987654321', 'BNI', 'SDN 2 Bandung', 2500000000, 25000000, 5000000, 2425000000, 'BELUM_CAIR');
+INSERT INTO "DAKDetailPenerima" (dakPenyaluranId, nip, nama, namaPemilikRekening, noRekening, bank, satdik, salurBruto, pph, potIjn, salurNetto, status)
+SELECT
+    (SELECT id FROM "DAKPenyaluran" WHERE jenis = 'TPP Triwulan I' AND periode = '2025' LIMIT 1),
+    '198001012005011001', 'Ahmad Supriyadi', 'Ahmad Supriyadi', '1234567890', 'BRI', 'SDN 1 Jakarta', 2500000000, 25000000, 5000000, 2425000000, 'BELUM_CAIR'
+WHERE EXISTS (SELECT 1 FROM "DAKPenyaluran" WHERE jenis = 'TPP Triwulan I' AND periode = '2025')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO "DAKDetailPenerima" (dakPenyaluranId, nip, nama, namaPemilikRekening, noRekening, bank, satdik, salurBruto, pph, potIjn, salurNetto, status)
+SELECT
+    (SELECT id FROM "DAKPenyaluran" WHERE jenis = 'TPP Triwulan I' AND periode = '2025' LIMIT 1),
+    '198502152010011002', 'Siti Aminah', 'Siti Aminah', '0987654321', 'BNI', 'SDN 2 Bandung', 2500000000, 25000000, 5000000, 2425000000, 'BELUM_CAIR'
+WHERE EXISTS (SELECT 1 FROM "DAKPenyaluran" WHERE jenis = 'TPP Triwulan I' AND periode = '2025')
+ON CONFLICT DO NOTHING;
 
 -- ==========================================
 -- Trigger untuk auto update updatedAt
@@ -189,21 +196,42 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Apply trigger ke semua tabel
+DROP TRIGGER IF EXISTS update_user_updated_at ON "User";
 CREATE TRIGGER update_user_updated_at BEFORE UPDATE ON "User"
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_guru_updated_at ON "Guru";
 CREATE TRIGGER update_guru_updated_at BEFORE UPDATE ON "Guru"
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_pengajuan_updated_at ON "Pengajuan";
 CREATE TRIGGER update_pengajuan_updated_at BEFORE UPDATE ON "Pengajuan"
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_dak_penyaluran_updated_at ON "DAKPenyaluran";
 CREATE TRIGGER update_dak_penyaluran_updated_at BEFORE UPDATE ON "DAKPenyaluran"
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_dak_detail_updated_at ON "DAKDetailPenerima";
 CREATE TRIGGER update_dak_detail_updated_at BEFORE UPDATE ON "DAKDetailPenerima"
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ==========================================
 -- Done!
 -- ==========================================
+
+-- Verification query
+SELECT
+    'Guru' as table_name, COUNT(*) as row_count FROM "Guru"
+UNION ALL
+SELECT
+    'User', COUNT(*) FROM "User"
+UNION ALL
+SELECT
+    'Pengajuan', COUNT(*) FROM "Pengajuan"
+UNION ALL
+SELECT
+    'DAKPenyaluran', COUNT(*) FROM "DAKPenyaluran"
+UNION ALL
+SELECT
+    'DAKDetailPenerima', COUNT(*) FROM "DAKDetailPenerima";
